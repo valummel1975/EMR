@@ -1,0 +1,36 @@
+- !policy
+  id: tampa/nextgen/emerald/bdp
+  body:
+  - &variables
+      - !variable atlas-core-security-jwt-secret
+      - !variable spring-datasource-username
+      - !variable spring-datasource-password
+
+- !permit
+  resources: *variables
+  role: !layer conjur/authn-k8s/tampa/apps
+  privileges: [ read, execute ]
+
+- !policy
+  id: conjur/authn-k8s/tampa/apps
+  owner: !group admin
+  annotations:
+    description: Identities permitted to authenticate
+  body:
+  - !layer
+    annotations:
+      description: Layer of authenticator identities permitted to call authn svc
+  - &hosts
+    - !host
+      id: app-emerald/deployment/emerald-bdp
+      annotations:
+        kubernetes/authentication-container-name: authenticator
+        openshift: "true"
+    - !host
+      id: app-emerald/deployment/emerald-bdp-canary
+      annotations:
+        kubernetes/authentication-container-name: authenticator
+        openshift: "true"
+  - !grant
+    role: !layer
+    members: *hosts
